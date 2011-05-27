@@ -1,4 +1,4 @@
-﻿<cfsavecontent variable="soapEnvelope">
+﻿<cfxml variable="soapEnvelope">
 <SOAP-ENV:Envelope
    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
    SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"> 
@@ -9,14 +9,27 @@
       <ItemName>Really Cool Item</ItemName>
       <ItemDesc>This item is the coolest</ItemDesc>
       <OrderQuantity>100</OrderQuantity>
-      <WholesalePrice>14.99</WholeSalePrice>
+      <WholesalePrice>14.99</WholesalePrice>
       <OrderDateTime><cfoutput>#dateFormat(now(),"MM/DD/yyyy")# #timeFormat(now(),"HH:DD TT")#</cfoutput></OrderDateTime>
       </m:OrderItem>
    </SOAP-ENV:Body>  
 </SOAP-ENV:Envelope>	
-</cfsavecontent>
+</cfxml>
 
-<cfset wsAuth = createObject("component","src.WSAuthenticator").init()>
-<cfset signedSOAPEnvelope = wsAuth.addWSAuthentication(soapEnvelope,"username","password")>
+<cfdump var="#toString(soapEnvelope)#">
 <cfdump var="#soapEnvelope#">
+
+<!--- Make sure the JAR files are loaded! If you dropped them in [cf home]/lib, you must restart ColdFusion --->
+<cfset wsAuth = createObject("component","cfWSAuthenticator.src.WSAuthenticator").init()>
+<cfset signedSOAPEnvelope = wsAuth.addWSAuthentication(soapEnvelope,"YourUsername","YourPassword")>
+
+<cfdump var="#toString(signedSOAPEnvelope)#">
 <cfdump var="#signedSOAPEnvelope#">
+
+<!--- 
+To Send the Signed envelope 
+<cfset response = wsAuth.sendSoapRequest("endpointURLForWebService",signedSOAPEnvelope,"theSoapAction")>
+
+sendSoapRequest could be removed from the object and placed into its own object elsewhere. 
+It's in the object as a conveniene since it adds the required headers for WS Security.
+--->
