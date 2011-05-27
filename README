@@ -1,7 +1,6 @@
 OVERVIEW:	Adds WSAuthentication to SOAP Requests, Sends SOAP request and returns result
 AUTHOR: 	Anthony Israel-Davis
 
-NOTES:
 =====================================================
 This requires the following jar files in the [cf_home]/lib directories:
 
