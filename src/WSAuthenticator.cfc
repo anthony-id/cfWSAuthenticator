@@ -3,7 +3,8 @@
 		<cfscript>
 		// Create Java Objects from xmlsec and wss4j
 		variables.WSConstantsObj = CreateObject("Java","org.apache.ws.security.WSConstants");
-		variables.messagePkg = CreateObject("Java","org.apache.ws.security.message.WSSAddUsernameToken");
+		variables.messageClass = CreateObject("Java","org.apache.ws.security.message.WSSecUsernameToken");
+		variables.secHeaderClass = CreateObject("Java","org.apache.ws.security.message.WSSecHeader");
 		return this;
 		</cfscript>
 	</cffunction>
@@ -13,7 +14,16 @@
 		if (!structKeyExists(variables,"messagePkg")){
 			init();
 		}	
-		return variables.messagePkg;
+		return variables.messageClass.Init();
+		</cfscript>
+	</cffunction>
+	
+	<cffunction name="getSecHeader" access="private" output="false">
+		<cfscript>
+		if (!structKeyExists(variables,"messagePkg")){
+			init();
+		}	
+		return variables.secHeaderClass.Init();
 		</cfscript>
 	</cffunction>
 	
@@ -26,25 +36,34 @@
 		</cfscript>
 	</cffunction>	
 	
-	<cffunction name="addWSAuthentication"  access="public" output="false" hint="I sign SOAP envelope using WS Authentication">
+	<cffunction name="addWSAuthentication"  access="public" output="true" hint="I sign SOAP envelope using WS Authentication">
 		<cfargument name="soapEnvelope" type="string" required="true">
 		<cfargument name="username" type="string" required="true">
 		<cfargument name="password" type="string" required="false">
+		<cfargument name="passwordType" type="string" required="false" default="text" hint="Text or Digest">
 		<cfscript>
 		// Get Soap Envlope document for Java processing
 		var msg = getMessage();
+		var secHeader = getSecHeader();
 		var WSConstants = getWSConstants();
 		var soapEnv = arguments.soapEnvelope;
 		var env = soapEnv.getDocumentElement(); 
 		var e = "";
-		// Set Password type to TEXT (default is DIGEST)
-		msg.setPasswordType(WSConstants.PASSWORD_TEXT);
-		// Create WS-Security SOAP header using the build method from WSAddUsernameToken
-		e = msg.build(env.GetOwnerDocument(),arguments.username,arguments.password);
-		// Add the Nonce and Created elements
-		msg.addNonce(e);
-		msg.addCreated(e);
-		// Return the secure xml object 
+		
+		switch(arguments.passwordType){
+			case "text":
+				// Set Password type to TEXT (if not declared, default is DIGEST)
+				msg.setPasswordType(WSConstants.PASSWORD_TEXT);
+			break;
+		}
+		
+		// Create WS-Security SOAP header using the build method from WSSecUsernameToken
+		msg.setUserInfo(arguments.username,arguments.password);
+		msg.addNonce();
+		msg.addCreated();
+		secHeader.insertSecurityHeader(env.GetOwnerDocument());
+		e = msg.build(env.GetOwnerDocument(),secHeader);
+		
 		return soapEnv;
 		</cfscript>
 	</cffunction>
